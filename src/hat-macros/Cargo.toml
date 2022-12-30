@@ -1,0 +1,20 @@
+[package]
+name = "hat-macros"
+version = "0.0.1"
+authors = ["Matheus T. dos Santos <tenoriomatheus0@gmail.com>"]
+edition = "2021"
+repository = "https://github.com/RustAsyncRT/rart-rs"
+license-file = "../../LICENSE"
+readme = "../../README.md"
+documentation = "https://docs.rs/rart-rs"
+keywords = ["async", "embedded", "no-std"]
+categories = ["asynchronous", "embedded", "no-std"]
+description = "The macro submodule of hat-rs crate"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "1.0", features = ["full"] }
+quote = "1.0"
+proc-macro2 = "1.0"
