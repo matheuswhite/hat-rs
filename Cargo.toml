@@ -12,6 +12,7 @@ categories = ["asynchronous", "embedded", "no-std"]
 description = "An async runtime to use the benefits of the availables embedded OS"
 
 [workspace]
+members = ["tests/no_std/rust"]
 
 [dependencies]
 heapless = "0.7.10"

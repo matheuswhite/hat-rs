@@ -1,0 +1,14 @@
+[package]
+name = "rust"
+version = "0.1.0"
+authors = ["Matheus T. dos Santos <tenoriomatheus0@gmail.com>"]
+edition = "2021"
+
+[dependencies]
+heapless = "0.7.10"
+hat = { path = "../../..", features = ["zbus"] }
+hat-macros = { path = "../../../src/hat-macros" }
+panic-halt = "0.2.0"
+
+[lib]
+crate-type = ["staticlib"]

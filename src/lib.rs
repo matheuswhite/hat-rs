@@ -3,8 +3,10 @@
 #![feature(alloc_error_handler)]
 #![feature(once_cell)]
 #![feature(waker_getters)]
+#![feature(async_fn_in_trait)]
 
 extern crate core;
+extern crate alloc;
 
 mod futures;
 mod common;
@@ -15,7 +17,7 @@ mod std;
 #[cfg(not(feature = "std"))]
 mod no_std;
 #[cfg(feature = "zbus")]
-mod zbus;
+pub mod zbus;
 
 pub use common::task::{Task, TaskResult};
 pub use common::executor::Executor;
@@ -110,7 +112,7 @@ macro_rules! channel_pub {
 
 pub use common::result::{Expect, HATError};
 #[cfg(not(feature = "std"))]
-pub use no_std::{log_fn, timestamp, timestamp_millis};
+pub use no_std::{log_fn, panic_fn, timestamp, timestamp_millis};
 #[cfg(not(feature = "std"))]
 pub use const_format::formatcp;
 
@@ -118,10 +120,3 @@ pub use const_format::formatcp;
 pub use peripherals::{Peripheral, gpio::Gpio};
 #[cfg(all(feature = "std", feature = "peripherals"))]
 pub use crate::std::peripheral::read_gpio;
-
-#[cfg(feature = "zbus")]
-pub use zbus::error::ZbusError;
-#[cfg(feature = "zbus")]
-pub use zbus::channel::ZbusChannel;
-#[cfg(feature = "zbus")]
-pub use zbus::observers::{ZBusListener, ZBusSubscriber};

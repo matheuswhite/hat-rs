@@ -21,6 +21,10 @@ impl<T> BlockingMutex<T> {
         }
     }
 
+    pub fn ptr(&self) -> NonNull<()> {
+        self.ptr
+    }
+
     pub fn lock(&self) -> Result<MutexGuard<'_, T>, i32> {
         unsafe {
             let id = rtos_mutex_lock(self.ptr.as_ptr(), u32::MAX);

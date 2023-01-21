@@ -3,7 +3,6 @@ use core::alloc::{GlobalAlloc, Layout};
 #[repr(C, align(256))]
 pub struct MempoolAlloc;
 
-#[cfg(feature = "alloc_rtos")]
 #[global_allocator]
 static MEMPOOL_ALLOC: MempoolAlloc = MempoolAlloc;
 

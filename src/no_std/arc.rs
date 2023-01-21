@@ -16,8 +16,8 @@ pub struct Arc<T> {
 }
 
 pub struct ArcInner<T> {
-    rc: AtomicUsize,
     data: T,
+    rc: AtomicUsize,
 }
 
 impl<T> Arc<T> {
@@ -33,22 +33,17 @@ impl<T> Arc<T> {
     }
 
     pub fn into_raw(this: Self) -> *const T {
-        let ptr = NonNull::as_ptr((&this).ptr);
-        let ptr = unsafe { core::ptr::addr_of_mut!((*ptr).data) };
+        let ptr_inner = NonNull::as_ptr((&this).ptr);
+        let ptr_data = unsafe { core::ptr::addr_of_mut!((*ptr_inner).data) };
         mem::forget(this);
-        ptr
+        ptr_data
     }
 
     pub unsafe fn from_raw(ptr: *const T) -> Self {
-        let align = core::intrinsics::min_align_of_val(ptr);
-        let layout = Layout::new::<ArcInner<()>>();
-        let offset = (layout.size() + padding_needed_for(&layout, align)) as isize;
-
         let ptr_inner = ptr as *mut ArcInner<T>;
-        let arc_ptr = Arc::set_ptr_value(ptr_inner, (ptr as *mut u8).offset(-offset));
 
         Arc {
-            ptr: NonNull::new_unchecked(arc_ptr),
+            ptr: NonNull::new_unchecked(ptr_inner),
             phantom: PhantomData,
         }
     }

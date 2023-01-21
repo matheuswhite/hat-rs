@@ -1,8 +1,8 @@
-use crate::mc_panic;
+use crate::hat_panic;
 #[cfg(not(feature = "std"))]
 use const_format::formatcp;
 #[cfg(not(feature = "std"))]
-use crate::no_std::panic;
+use crate::no_std::panic_fn;
 #[cfg(feature = "std")]
 use std::sync::PoisonError;
 #[cfg(feature = "std")]
@@ -33,9 +33,9 @@ impl<T, E> Expect<T> for Result<T, E> {
         match self {
             Ok(t) => t,
             #[cfg(feature = "std")]
-            Err(_e) => mc_panic!("{}", msg),
+            Err(_e) => hat_panic!("{}", msg),
             #[cfg(not(feature = "std"))]
-            Err(_e) => mc_panic!("%s", msg)
+            Err(_e) => hat_panic!("%s", msg)
         }
     }
 }
@@ -45,9 +45,9 @@ impl<T> Expect<T> for Option<T> {
         match self {
             Some(t) => t,
             #[cfg(feature = "std")]
-            None => mc_panic!("{}", msg),
+            None => hat_panic!("{}", msg),
             #[cfg(not(feature = "std"))]
-            None => mc_panic!("%s", msg)
+            None => hat_panic!("%s", msg)
         }
     }
 }
