@@ -15,10 +15,10 @@ use crate::zbus_channels::{ping_c_ref, pong_c_ref};
 
 type ZbusChannel<T> = zbus::Channel<T, WorkQueueBackend>;
 
-#[hat_macros::entry]
+#[hat_macros::main]
 #[hat_macros::tasks(ping_task)]
 pub async fn pong_task() -> TaskResult {
-    let mut pong_channel = unsafe { ZbusChannel::<i32>::load(&pong_c_ref) };
+    let pong_channel = unsafe { ZbusChannel::<i32>::load(&pong_c_ref) };
     let pong_sub = pong_channel.new_subscriber();
 
     for _ in 0..3 {
@@ -30,7 +30,7 @@ pub async fn pong_task() -> TaskResult {
 }
 
 pub async fn ping_task() -> TaskResult {
-    let mut ping_channel = unsafe { ZbusChannel::load(&ping_c_ref) };
+    let ping_channel = unsafe { ZbusChannel::load(&ping_c_ref) };
 
     for i in 0..3 {
         ping_channel.publish(i).await;

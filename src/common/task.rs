@@ -18,6 +18,7 @@ pub struct Task {
 }
 
 // TODO Explain why this is safe
+// TODO Check if this is needed for std
 unsafe impl Sync for Task {}
 
 impl Task {
