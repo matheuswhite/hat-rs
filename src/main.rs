@@ -11,8 +11,10 @@ mod time_manager;
 use crate::delay::delay_ms;
 use crate::executor::EXECUTOR;
 use crate::task::Task;
+use crate::time_manager::TimeManager;
+use alloc::rc::Rc;
 
-use crate::time_manager::{TimeManager, Timer};
+use core::borrow::BorrowMut;
 use embedded_alloc::Heap;
 use panic_halt as _;
 use rtt_target::{rprintln, rtt_init_print};
@@ -22,7 +24,7 @@ static HEAP: Heap = Heap::empty();
 const HEAP_SIZE: usize = 1024;
 
 #[cortex_m_rt::entry]
-fn main() -> ! {
+fn entry() -> ! {
     {
         use core::mem::MaybeUninit;
         static mut HEAP_MEM: [MaybeUninit<u8>; HEAP_SIZE] = [MaybeUninit::uninit(); HEAP_SIZE];
@@ -31,17 +33,34 @@ fn main() -> ! {
 
     rtt_init_print!();
 
-    rprintln!("Hello, world!");
+    rprintln!("Setting up timer...");
 
-    unsafe {
-        let executor = executor!();
+    let dp = Peripherals::take().unwrap();
 
-        executor.spawn(task!(blink)).unwrap();
+    let rcc = dp.RCC.constrain();
+    let clocks = rcc.cfgr.sysclk(16.MHz()).pclk1(8.MHz()).freeze();
 
-        executor.block_on().unwrap();
-    }
+    let mut timer = dp.TIM2.counter(&clocks);
+
+    init_timer(timer);
+
+    rprintln!("Spawning main task...");
+
+    spawn!("main" => main(unsafe { Peripherals::steal() }));
+
+    rprintln!("Starting executor...");
+    let executor = critical_section::with(|cs| unsafe { &mut *EXECUTOR.borrow(cs).get() });
+    executor.block_on().unwrap();
 
     loop {}
+}
+
+async fn main(_peripherals: Peripherals) {
+    rprintln!("Main task init");
+
+    spawn!(blink);
+
+    rprintln!("End of main task");
 }
 
 async fn blink() {
@@ -53,23 +72,50 @@ async fn blink() {
     }
 }
 
-pub static TIME_MANAGER: TimeManager = TimeManager::new(&TIMER);
+pub static TIME_MANAGER: TimeManager = TimeManager::new();
 
-static TIMER: STM32Timer = STM32Timer {};
+use core::cell::UnsafeCell;
+use critical_section::Mutex;
+pub use stm32f4xx_hal as hal;
 
-struct STM32Timer {}
+use hal::{
+    gpio::{self, Output, PushPull},
+    pac::{interrupt, Interrupt, Peripherals, TIM2},
+    prelude::*,
+    timer::{CounterUs, Event},
+};
+use stm32f4xx_hal::timer::Counter;
 
-impl Timer for STM32Timer {
-    fn start(
-        &self,
-        timeout_ms: u128,
-        ctx: &'static TimeManager,
-        callback: fn(&'static TimeManager),
-    ) {
-        todo!()
-    }
+const TIMER_FREQ: u32 = 16_000_000;
 
-    fn current_time_ms(&self) -> u128 {
-        todo!()
-    }
+static CTX: &TimeManager = &TIME_MANAGER;
+static CALLBACK: fn(&'static TimeManager) = TimeManager::timeout;
+static TIMER: Mutex<UnsafeCell<Option<Counter<TIM2, TIMER_FREQ>>>> =
+    Mutex::new(UnsafeCell::new(None));
+
+fn init_timer(timer: Counter<TIM2, TIMER_FREQ>) {
+    critical_section::with(|cs| {
+        let g_timer = unsafe { &mut *TIMER.borrow(cs).get() };
+
+        *g_timer = Some(timer);
+    });
+}
+
+pub fn __current_time_ms() -> u32 {
+    critical_section::with(|cs| {
+        let timer = unsafe { &mut *TIMER.borrow(cs).get() }.as_ref().unwrap();
+        timer.now().duration_since_epoch().to_millis()
+    })
+}
+
+pub fn __start_timer(timeout: u32) {
+    critical_section::with(|cs| {
+        let timer = unsafe { &mut *TIMER.borrow(cs).get() }.as_mut().unwrap();
+        timer.start(timeout.millis()).unwrap();
+    });
+}
+
+#[interrupt]
+fn TIM2() {
+    CALLBACK(CTX);
 }

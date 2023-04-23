@@ -25,10 +25,6 @@ impl Executor {
     }
 
     pub fn spawn(&mut self, task: Task) -> Result<(), ()> {
-        if self.is_blocked {
-            return Err(());
-        }
-
         if self.ready_tasks.iter().any(|x| x.name() == task.name()) {
             return Err(());
         }
@@ -45,14 +41,20 @@ impl Executor {
 
         self.is_blocked = true;
 
-        while let Some(mut task) = self.ready_tasks.pop_front() {
-            let waker = unsafe {
-                Waker::from_raw(RawWaker::new(task.name() as *const _ as *const (), &VTABLE))
-            };
-            let mut cx = Context::from_waker(&waker);
+        'main_loop: loop {
+            while let Some(mut task) = self.ready_tasks.pop_front() {
+                let waker = unsafe {
+                    Waker::from_raw(RawWaker::new(task.name() as *const _ as *const (), &VTABLE))
+                };
+                let mut cx = Context::from_waker(&waker);
 
-            if let Poll::Pending = task.future().poll(&mut cx) {
-                self.unready_tasks.push(task);
+                if let Poll::Pending = task.future().poll(&mut cx) {
+                    self.unready_tasks.push(task);
+                }
+            }
+
+            if self.unready_tasks.is_empty() {
+                break 'main_loop;
             }
         }
 
@@ -63,9 +65,21 @@ impl Executor {
 }
 
 #[macro_export]
-macro_rules! executor {
-    () => {
-        critical_section::with(|cs| &mut *EXECUTOR.borrow(cs).get())
+macro_rules! spawn {
+    ($task:ident) => {
+        critical_section::with(|cs| {
+            let name = stringify!($task);
+            unsafe { &mut *EXECUTOR.borrow(cs).get() }
+                .spawn(Task::new(name, $task()))
+                .expect(&alloc::format!("Cannot spawn {} task", name))
+        })
+    };
+    ($task_name:literal => $task_fn:expr) => {
+        critical_section::with(|cs| {
+            unsafe { &mut *EXECUTOR.borrow(cs).get() }
+                .spawn(Task::new($task_name, $task_fn))
+                .expect(&alloc::format!("Cannot spawn {} task", $task_name))
+        })
     };
 }
 
