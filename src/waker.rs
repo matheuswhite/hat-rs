@@ -28,10 +28,10 @@ pub fn new_waker(name: &'static str) -> Waker {
 }
 
 pub fn delete_waker(waker: &Waker) {
-    let p = unsafe { waker.as_raw().data() };
+    let p = waker.as_raw().data();
     let data = p as *const SizedString as *mut SizedString;
     let sized_string = unsafe { Box::from_raw(data) };
-    core::mem::drop(sized_string);
+    drop(sized_string);
 }
 
 static VTABLE: RawWakerVTable = {
@@ -66,7 +66,7 @@ static VTABLE: RawWakerVTable = {
             executor.ready_tasks().push_back(task);
         });
     }
-    unsafe fn drop(p: *const ()) {}
+    unsafe fn drop(_: *const ()) {}
 
     RawWakerVTable::new(clone, wake, wake_by_ref, drop)
 };

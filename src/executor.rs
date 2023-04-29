@@ -16,6 +16,11 @@ pub struct Executor {
     is_blocked: bool,
 }
 
+#[derive(Debug)]
+pub enum Error {
+    TaskNameAlreadyExist,
+}
+
 impl Executor {
     pub const fn new() -> Self {
         Self {
@@ -25,9 +30,11 @@ impl Executor {
         }
     }
 
-    pub fn spawn(&mut self, task: Task) -> Result<(), ()> {
-        if self.ready_tasks.iter().any(|x| x.name() == task.name()) {
-            return Err(());
+    pub fn spawn(&mut self, task: Task) -> Result<(), Error> {
+        if self.ready_tasks.iter().any(|x| x.name() == task.name())
+            || self.unready_tasks.iter().any(|x| x.name() == task.name())
+        {
+            return Err(Error::TaskNameAlreadyExist);
         }
 
         self.ready_tasks.push_back(task);
@@ -78,16 +85,12 @@ macro_rules! spawn {
     ($task:ident) => {
         critical_section::with(|cs| {
             let name = stringify!($task);
-            unsafe { &mut *EXECUTOR.borrow(cs).get() }
-                .spawn(Task::new(name, $task()))
-                .expect(&alloc::format!("Cannot spawn {} task", name))
+            unsafe { &mut *EXECUTOR.borrow(cs).get() }.spawn(Task::new(name, $task()))
         })
     };
     ($task_name:literal => $task_fn:expr) => {
         critical_section::with(|cs| {
-            unsafe { &mut *EXECUTOR.borrow(cs).get() }
-                .spawn(Task::new($task_name, $task_fn))
-                .expect(&alloc::format!("Cannot spawn {} task", $task_name))
+            unsafe { &mut *EXECUTOR.borrow(cs).get() }.spawn(Task::new($task_name, $task_fn))
         })
     };
 }

@@ -10,6 +10,10 @@ keywords = ["async", "embedded", "no-std"]
 categories = ["asynchronous", "embedded", "no-std"]
 description = "A minimal async runtime for embedded systems"
 
+[workspace]
+
+[lib]
+
 [dependencies]
 cortex-m = { version = "0.7.6", features = ["critical-section-single-core"] }
 cortex-m-rt = "0.7"
@@ -18,3 +22,4 @@ embedded-alloc = "0.5.0"
 critical-section = "1.1.0"
 stm32f4xx-hal = { version = "0.15.0", features = ["stm32f413"] }
 embedded-hal = { version = "0.2.7" }
+hat-macros = { path = "src/hat-macros", version = "0.1.0" }

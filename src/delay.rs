@@ -1,3 +1,4 @@
+use crate::time_manager::TimeManager;
 use core::cell::UnsafeCell;
 use core::future::Future;
 use core::pin::Pin;
@@ -5,7 +6,9 @@ use core::task::{Context, Poll};
 use core::time::Duration;
 use critical_section::Mutex;
 
-use crate::TIME_MANAGER;
+extern "Rust" {
+    static TIME_MANAGER: TimeManager;
+}
 
 struct Delay {
     is_ended: Mutex<UnsafeCell<bool>>,
@@ -36,7 +39,7 @@ impl Future for Delay {
                 let is_ended = unsafe { &mut *self.is_ended.borrow(cs).get() };
                 *is_ended = true;
             });
-            TIME_MANAGER.schedule(self.duration, cx.waker().clone());
+            unsafe { TIME_MANAGER.schedule(self.duration, cx.waker().clone()) };
             Poll::Pending
         }
     }
