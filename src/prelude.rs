@@ -7,4 +7,3 @@ pub use core::cell::UnsafeCell;
 pub use cortex_m::peripheral::SYST;
 pub use cortex_m_rt::exception;
 pub use critical_section::Mutex;
-pub use rtt_target::{rprintln, rtt_init_print};

@@ -4,7 +4,6 @@ use alloc::vec::Vec;
 use core::cell::UnsafeCell;
 use core::task::Context;
 use critical_section::Mutex;
-use rtt_target::rprintln;
 
 unsafe impl Sync for Executor {}
 
@@ -61,7 +60,6 @@ impl Executor {
             }
 
             if self.unready_tasks.is_empty() && self.ready_tasks.is_empty() {
-                rprintln!("End of executor");
                 break 'main_loop;
             }
         }

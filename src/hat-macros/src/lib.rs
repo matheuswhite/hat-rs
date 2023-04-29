@@ -1,6 +1,6 @@
 #![feature(proc_macro_quote)]
 
-use proc_macro::{quote, TokenStream};
+use proc_macro::TokenStream;
 
 #[proc_macro_attribute]
 pub fn main(_args: TokenStream, item: TokenStream) -> TokenStream {
@@ -23,7 +23,6 @@ pub fn main(_args: TokenStream, item: TokenStream) -> TokenStream {
 
         pub fn init_timer(mut timer: SYST) {{
             let ticks = TICKS as u32 & 0x00FF_FFFF;
-            rprintln!(\"Ticks: {{}}\", ticks);
 
             timer.set_reload(ticks);
             timer.enable_interrupt();
@@ -64,7 +63,6 @@ pub fn main(_args: TokenStream, item: TokenStream) -> TokenStream {
             }});
 
             if next_timeout == now {{
-                rprintln!(\"Heap: {{}}\", HEAP.free());
                 CALLBACK(CTX, now);
             }}
         }}
@@ -77,13 +75,8 @@ pub fn main(_args: TokenStream, item: TokenStream) -> TokenStream {
                 unsafe {{ HEAP.init(HEAP_MEM.as_ptr() as usize, HEAP_SIZE) }}
             }}
 
-            rtt_init_print!();
-
-            rprintln!(\"Spawning main task...\");
-
             let _ = spawn!(main);
 
-            rprintln!(\"Starting executor...\");
             let executor = critical_section::with(|cs| unsafe {{ &mut *EXECUTOR.borrow(cs).get() }});
             executor.block_on().unwrap();
 
