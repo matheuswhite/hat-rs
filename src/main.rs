@@ -1,4 +1,5 @@
 #![feature(drain_filter)]
+#![feature(waker_getters)]
 #![no_main]
 #![no_std]
 
@@ -13,18 +14,25 @@ mod waker;
 use crate::delay::delay_ms;
 use crate::executor::EXECUTOR;
 use crate::task::Task;
+use core::panic::PanicInfo;
 use hal::prelude::*;
 pub use stm32f4xx_hal as hal;
 
 use embedded_alloc::Heap;
 use embedded_hal::digital::v2::PinState;
-use panic_halt as _;
 use rtt_target::{rprintln, rtt_init_print};
 use stm32f4xx_hal::gpio::{Output, Pin};
 
 #[global_allocator]
 static HEAP: Heap = Heap::empty();
 const HEAP_SIZE: usize = 1024;
+
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    rprintln!("panic: {}", info);
+
+    loop {}
+}
 
 #[cortex_m_rt::entry]
 fn entry() -> ! {
@@ -81,13 +89,20 @@ async fn blink2(mut led: Pin<'B', 7, Output>) {
         led.toggle();
         delay_ms(100).await;
         led.toggle();
+
+        spawn!(say_hello);
     }
+}
+
+async fn say_hello() {
+    rprintln!("Hello Mr. Matheus");
 }
 
 pub use macros::{__current_time_ms, init_timer, TIME_MANAGER};
 
 mod macros {
     use crate::time_manager::TimeManager;
+    use crate::HEAP;
     use core::cell::UnsafeCell;
     use cortex_m::peripheral::SYST;
     use cortex_m_rt::exception;
@@ -139,17 +154,19 @@ mod macros {
 
     #[exception]
     fn SysTick() {
-        critical_section::with(|cs| {
+        let (next_timeout, now) = critical_section::with(|cs| {
             let timer = unsafe { &mut *TIMER.borrow(cs).get() }.as_mut().unwrap();
-            timer.enable_counter();
+            timer.clear_current();
 
             let now = unsafe { &mut *NOW.borrow(cs).get() };
             *now += 1;
 
-            let next_timeout = unsafe { &*NEXT_TIMEOUT.borrow(cs).get() };
-            if *next_timeout == *now {
-                CALLBACK(CTX, *now);
-            }
+            (unsafe { *NEXT_TIMEOUT.borrow(cs).get() }, *now)
         });
+
+        if next_timeout == now {
+            rprintln!("Heap: {}", HEAP.free());
+            CALLBACK(CTX, now);
+        }
     }
 }

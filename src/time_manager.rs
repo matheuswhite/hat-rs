@@ -47,10 +47,9 @@ impl TimeManager {
 
             entries
                 .drain_filter(|(timeout, _)| *timeout == now)
-                .map(|(_, waker)| waker)
                 .collect::<Vec<_>>()
         });
 
-        wakers.iter().for_each(|waker| waker.wake_by_ref());
+        wakers.iter().for_each(|(_, waker)| waker.wake_by_ref());
     }
 }

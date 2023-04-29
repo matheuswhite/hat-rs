@@ -1,4 +1,4 @@
-use crate::waker::new_waker;
+use crate::waker::{delete_waker, new_waker};
 use alloc::boxed::Box;
 use core::future::Future;
 use core::pin::Pin;
@@ -25,5 +25,11 @@ impl Task {
 
     pub fn name(&self) -> &'static str {
         self.name
+    }
+}
+
+impl Drop for Task {
+    fn drop(&mut self) {
+        delete_waker(&self.waker);
     }
 }
