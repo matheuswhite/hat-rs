@@ -1,12 +1,13 @@
-// Based on https://github.com/rust-embedded-community/async-on-embedded/blob/master/async-embedded/src/executor.rs
-
+use crate::waker::new_waker;
 use alloc::boxed::Box;
 use core::future::Future;
 use core::pin::Pin;
+use core::task::Waker;
 
 pub struct Task {
     name: &'static str,
     future: Pin<Box<dyn Future<Output = ()> + 'static>>,
+    waker: Waker,
 }
 
 impl Task {
@@ -14,21 +15,15 @@ impl Task {
         Self {
             name,
             future: Box::pin(future),
+            waker: new_waker(name),
         }
     }
 
-    pub fn future(&mut self) -> Pin<&mut dyn Future<Output = ()>> {
-        self.future.as_mut()
+    pub fn future_waker(&mut self) -> (Pin<&mut dyn Future<Output = ()>>, &Waker) {
+        (self.future.as_mut(), &self.waker)
     }
 
     pub fn name(&self) -> &'static str {
         self.name
     }
-}
-
-#[macro_export]
-macro_rules! task {
-    ($future:ident) => {
-        Task::new(stringify!($future), $future())
-    };
 }

@@ -1,15 +1,19 @@
-use crate::{__current_time_ms, __start_timer};
 use alloc::vec::Vec;
 use core::cell::UnsafeCell;
 use core::task::Waker;
 use core::time::Duration;
 use critical_section::Mutex;
 
+extern "Rust" {
+    pub fn __current_time_ms() -> u128;
+    pub fn __start_timer(timeout: u128);
+}
+
 // TODO Check this
 unsafe impl Sync for TimeManager {}
 
 pub struct TimeManager {
-    entries: Mutex<UnsafeCell<Vec<(u32, Waker)>>>,
+    entries: Mutex<UnsafeCell<Vec<(u128, Waker)>>>,
 }
 
 impl TimeManager {
@@ -20,10 +24,10 @@ impl TimeManager {
     }
 
     pub fn schedule(&'static self, duration: Duration, waker: Waker) {
-        let timeout_instant = __current_time_ms() + duration.as_millis() as u32;
+        let timeout_instant = unsafe { __current_time_ms() } + duration.as_millis();
 
         critical_section::with(|cs| {
-            let mut entries = unsafe { &mut *self.entries.borrow(cs).get() };
+            let entries = unsafe { &mut *self.entries.borrow(cs).get() };
 
             entries.push((timeout_instant, waker));
 
@@ -31,16 +35,22 @@ impl TimeManager {
                 timeout_a.partial_cmp(timeout_b).unwrap()
             });
 
-            __start_timer(entries[0].0);
+            unsafe {
+                __start_timer(entries[0].0);
+            }
         });
     }
 
-    pub fn timeout(&'static self) {
-        critical_section::with(|cs| {
-            let mut entries = unsafe { &mut *self.entries.borrow(cs).get() };
+    pub fn timeout(&'static self, now: u128) {
+        let wakers = critical_section::with(|cs| {
+            let entries = unsafe { &mut *self.entries.borrow(cs).get() };
 
-            entries.remove(0).1
-        })
-        .wake();
+            entries
+                .drain_filter(|(timeout, _)| *timeout == now)
+                .map(|(_, waker)| waker)
+                .collect::<Vec<_>>()
+        });
+
+        wakers.iter().for_each(|waker| waker.wake_by_ref());
     }
 }

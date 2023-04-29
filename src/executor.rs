@@ -2,8 +2,9 @@ use crate::task::Task;
 use alloc::collections::VecDeque;
 use alloc::vec::Vec;
 use core::cell::UnsafeCell;
-use core::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
+use core::task::Context;
 use critical_section::Mutex;
+use rtt_target::rprintln;
 
 unsafe impl Sync for Executor {}
 
@@ -43,17 +44,17 @@ impl Executor {
 
         'main_loop: loop {
             while let Some(mut task) = self.ready_tasks.pop_front() {
-                let waker = unsafe {
-                    Waker::from_raw(RawWaker::new(task.name() as *const _ as *const (), &VTABLE))
-                };
-                let mut cx = Context::from_waker(&waker);
+                let (mut future, waker) = task.future_waker();
 
-                if let Poll::Pending = task.future().poll(&mut cx) {
+                let mut cx = Context::from_waker(waker);
+
+                if future.as_mut().poll(&mut cx).is_pending() {
                     self.unready_tasks.push(task);
                 }
             }
 
-            if self.unready_tasks.is_empty() {
+            if self.unready_tasks.is_empty() && self.ready_tasks.is_empty() {
+                rprintln!("End of executor");
                 break 'main_loop;
             }
         }
@@ -61,6 +62,14 @@ impl Executor {
         self.is_blocked = false;
 
         Ok(())
+    }
+
+    pub fn ready_tasks(&mut self) -> &mut VecDeque<Task> {
+        &mut self.ready_tasks
+    }
+
+    pub fn unready_tasks(&mut self) -> &mut Vec<Task> {
+        &mut self.unready_tasks
     }
 }
 
@@ -84,32 +93,3 @@ macro_rules! spawn {
 }
 
 pub static EXECUTOR: Mutex<UnsafeCell<Executor>> = Mutex::new(UnsafeCell::new(Executor::new()));
-
-static VTABLE: RawWakerVTable = {
-    unsafe fn clone(p: *const ()) -> RawWaker {
-        RawWaker::new(p, &VTABLE)
-    }
-    unsafe fn wake(p: *const ()) {
-        wake_by_ref(p)
-    }
-    unsafe fn wake_by_ref(p: *const ()) {
-        let name = core::ptr::read(p as *const &str);
-
-        critical_section::with(|cs| {
-            let executor = unsafe { &mut *EXECUTOR.borrow(cs).get() };
-
-            let position = executor
-                .unready_tasks
-                .iter()
-                .position(|task| task.name() == name)
-                .unwrap();
-            let task = executor.unready_tasks.remove(position);
-            executor.ready_tasks.push_back(task);
-        });
-    }
-    unsafe fn drop(_: *const ()) {
-        // no-op
-    }
-
-    RawWakerVTable::new(clone, wake, wake_by_ref, drop)
-};
