@@ -18,6 +18,20 @@ impl From<&'static str> for SizedString {
     }
 }
 
+pub fn waker_id(waker: &Waker) -> &'static str {
+    let p = waker.as_raw().data();
+    let data = p as *const SizedString as *mut SizedString;
+    let sized_string = unsafe { Box::from_raw(data) };
+    let sized_string = Box::leak(sized_string);
+    let name = unsafe { from_raw_parts(sized_string.string, sized_string.len) };
+
+    let Ok(name) = from_utf8(name) else {
+        panic!("name error");
+    };
+
+    name
+}
+
 pub fn new_waker(name: &'static str) -> Waker {
     unsafe {
         let sized_string: SizedString = name.into();
@@ -34,6 +48,19 @@ pub fn delete_waker(waker: &Waker) {
     drop(sized_string);
 }
 
+fn get_name_from_waker(p: *const ()) -> &'static str {
+    let data = p as *const SizedString as *mut SizedString;
+    let sized_string = unsafe { Box::from_raw(data) };
+    let sized_string = Box::leak(sized_string);
+    let name = unsafe { from_raw_parts(sized_string.string, sized_string.len) };
+
+    let Ok(name) = from_utf8(name) else {
+        panic!("name error");
+    };
+
+    name
+}
+
 static VTABLE: RawWakerVTable = {
     unsafe fn clone(p: *const ()) -> RawWaker {
         RawWaker::new(p, &VTABLE)
@@ -42,14 +69,7 @@ static VTABLE: RawWakerVTable = {
         wake_by_ref(p)
     }
     unsafe fn wake_by_ref(p: *const ()) {
-        let data = p as *const SizedString as *mut SizedString;
-        let sized_string = unsafe { Box::from_raw(data) };
-        let sized_string = Box::leak(sized_string);
-        let name = from_raw_parts(sized_string.string, sized_string.len);
-
-        let Ok(name) = from_utf8(name) else {
-            panic!("name error");
-        };
+        let name = get_name_from_waker(p);
 
         critical_section::with(|cs| {
             let executor = unsafe { &mut *EXECUTOR.borrow(cs).get() };

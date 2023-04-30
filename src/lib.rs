@@ -7,6 +7,7 @@ extern crate alloc;
 
 mod delay;
 mod executor;
+mod mutex;
 pub mod prelude;
 mod task;
 mod time_manager;
