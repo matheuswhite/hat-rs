@@ -7,6 +7,7 @@ use core::panic::PanicInfo;
 use embedded_alloc::Heap;
 use embedded_hal::digital::v2::PinState;
 use hal::prelude::*;
+use rtt_target::{rprintln, rtt_init_print};
 use stm32f4xx_hal as hal;
 use stm32f4xx_hal::gpio::{Output, Pin};
 
@@ -25,6 +26,8 @@ fn panic(info: &PanicInfo) -> ! {
 
 #[hat::main]
 async fn main() {
+    rtt_init_print!();
+
     let dp = hal::pac::Peripherals::take().unwrap();
     let cp = cortex_m::Peripherals::take().unwrap();
 

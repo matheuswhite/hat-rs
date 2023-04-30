@@ -13,7 +13,8 @@ description = "A minimal async runtime for embedded systems"
 [workspace]
 members = [
     "src/hat-macros",
-    "examples/helloworld"
+    "examples/helloworld",
+    "examples/blinky"
 ]
 
 [lib]
@@ -33,3 +34,7 @@ embedded-hal = { version = "0.2.7" }
 [[example]]
 name = "helloworld"
 path = "examples/helloworld/src/main.rs"
+
+[[example]]
+name = "blinky"
+path = "examples/blinky/src/main.rs"
