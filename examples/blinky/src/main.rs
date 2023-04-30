@@ -31,8 +31,11 @@ async fn main() {
     let dp = hal::pac::Peripherals::take().unwrap();
     let cp = cortex_m::Peripherals::take().unwrap();
 
+    let rcc = dp.RCC.constrain();
+    let _ = rcc.cfgr.sysclk(16.MHz()).freeze();
+
     rprintln!("Setting up timer...");
-    init_timer(cp.SYST);
+    init_timer(cp.SYST, 16_000_000);
 
     rprintln!("Main task init");
 
@@ -47,9 +50,12 @@ async fn main() {
 }
 
 async fn blink(mut led: Pin<'B', 0, Output>) {
+    let mut count = 0;
+
     loop {
         delay_ms(500).await;
         led.toggle();
+        count += 1;
         delay_ms(500).await;
         led.toggle();
     }

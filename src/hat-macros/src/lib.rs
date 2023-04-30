@@ -4,7 +4,7 @@ use proc_macro::TokenStream;
 
 #[proc_macro_attribute]
 pub fn main(_args: TokenStream, item: TokenStream) -> TokenStream {
-    let _system_clock = "8_000_000";
+    let _system_clock = "16_000_000";
 
     format!("#[no_mangle]
         static TIME_MANAGER: TimeManager = TimeManager::new();
@@ -15,16 +15,14 @@ pub fn main(_args: TokenStream, item: TokenStream) -> TokenStream {
         static NOW: Mutex<UnsafeCell<u128>> = Mutex::new(UnsafeCell::new(0));
         static NEXT_TIMEOUT: Mutex<UnsafeCell<u128>> = Mutex::new(UnsafeCell::new(0));
 
-        const SYSTEM_CLOCK: u128 = 8_000_000;
-
         const TIME_CONTANT: u128 = 10_000_000;
         const TIME_DIVISOR: u128 = 10_000_000_000;
-        const TICKS: u128 = (TIME_CONTANT * SYSTEM_CLOCK) / TIME_DIVISOR;
 
-        pub fn init_timer(mut timer: SYST) {{
-            let ticks = TICKS as u32 & 0x00FF_FFFF;
+        pub fn init_timer(mut timer: SYST, sys_clock: u128) {{
+            let ticks = ((TIME_CONTANT * sys_clock) / TIME_DIVISOR) as u32 & 0x00FF_FFFF;
 
-            timer.set_reload(ticks);
+            timer.set_clock_source(SystClkSource::Core);
+            timer.set_reload(ticks - 1);
             timer.enable_interrupt();
             timer.enable_counter();
 
