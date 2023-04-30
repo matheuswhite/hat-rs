@@ -14,6 +14,14 @@ pub struct Mutex<T> {
     wakers: CSMutex<UnsafeCell<VecDeque<Waker>>>,
 }
 
+unsafe impl<T: Sync> Sync for Mutex<T> {}
+
+impl<T: Default> Default for Mutex<T> {
+    fn default() -> Self {
+        Mutex::new(T::default())
+    }
+}
+
 impl<T> Mutex<T> {
     pub const fn new(data: T) -> Self {
         Self {

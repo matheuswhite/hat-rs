@@ -14,7 +14,8 @@ description = "A minimal async runtime for embedded systems"
 members = [
     "src/hat-macros",
     "examples/helloworld",
-    "examples/blinky"
+    "examples/blinky",
+    "examples/philosophers"
 ]
 
 [lib]
@@ -30,6 +31,7 @@ hat-macros = { path = "src/hat-macros", version = "0.1.0" }
 rtt-target = { version = "0.3.1", features = ["cortex-m"] }
 stm32f4xx-hal = { version = "0.15.0", features = ["stm32f413"] }
 embedded-hal = { version = "0.2.7" }
+rand = { version = "0.8.5", default-features = false, features = ["small_rng"] }
 
 [[example]]
 name = "helloworld"
@@ -38,3 +40,7 @@ path = "examples/helloworld/src/main.rs"
 [[example]]
 name = "blinky"
 path = "examples/blinky/src/main.rs"
+
+[[example]]
+name = "philosophers"
+path = "examples/philosophers/src/main.rs"

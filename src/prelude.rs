@@ -1,5 +1,7 @@
 pub use crate::delay::delay_ms;
 pub use crate::executor::EXECUTOR;
+pub use crate::mutex::Mutex as AsyncMutex;
+pub use crate::mutex::*;
 pub use crate::spawn;
 pub use crate::task::Task;
 pub use crate::time_manager::TimeManager;

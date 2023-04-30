@@ -86,7 +86,7 @@ macro_rules! spawn {
             unsafe { &mut *EXECUTOR.borrow(cs).get() }.spawn(Task::new(name, $task()))
         })
     };
-    ($task_name:literal => $task_fn:expr) => {
+    ($task_name:expr => $task_fn:expr) => {
         critical_section::with(|cs| {
             unsafe { &mut *EXECUTOR.borrow(cs).get() }.spawn(Task::new($task_name, $task_fn))
         })
