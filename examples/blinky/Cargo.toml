@@ -1,0 +1,18 @@
+[package]
+name = "blinky"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+hat = { version = "0.1.0", git = "https://github.com/matheuswhite/hat-rs", branch = "v2" }
+rtt-target = { version = "0.3.1", features = ["cortex-m"] }
+cortex-m = { version = "0.7.6", features = ["critical-section-single-core"] }
+cortex-m-rt = "0.7"
+embedded-alloc = "0.5.0"
+critical-section = "1.1.0"
+embedded-hal = { version = "0.2.7" }
+
+# Change it to your MCU HAL
+stm32f4xx-hal = { version = "0.15.0", features = ["stm32f413"] }

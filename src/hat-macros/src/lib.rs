@@ -1,12 +1,19 @@
-mod entry_macro;
-
-use crate::entry_macro::{entry_parse, entry_analyze, entry_codegen};
+#![feature(proc_macro_quote)]
 
 use proc_macro::TokenStream;
 
 #[proc_macro_attribute]
 pub fn main(args: TokenStream, item: TokenStream) -> TokenStream {
-    let ast = entry_parse(args.into(), item.into());
-    let model = entry_analyze(ast);
-    entry_codegen(model)
+    let heap_size = args
+        .to_string()
+        .parse::<usize>()
+        .expect("Cannot get heap size");
+
+    format!(
+        include_str!("../template/hat_main.rs"),
+        heap_size,
+        item.to_string()
+    )
+    .parse::<TokenStream>()
+    .unwrap()
 }
