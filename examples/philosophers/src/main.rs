@@ -11,7 +11,7 @@ use hal::prelude::*;
 use rtt_target::{rprintln, rtt_init_print};
 use stm32f4xx_hal as hal;
 
-use crate::philosophers::{philosopher, Chopstick, Noodles};
+use crate::philosophers::{philosopher, Chopstick};
 use hat::prelude::*;
 
 #[hat::main]
@@ -29,7 +29,6 @@ async fn main() {
 
     rprintln!("Main task init");
 
-    static NOODLE: AsyncMutex<Noodles> = AsyncMutex::new(Noodles {});
     static CHOPSTICKS: [AsyncMutex<Chopstick>; 5] = [
         AsyncMutex::new(Chopstick {}),
         AsyncMutex::new(Chopstick {}),
@@ -46,7 +45,7 @@ async fn main() {
     ];
 
     for index in 0..5 {
-        let _ = spawn!(task_names[index] => philosopher(index, &NOODLE, &CHOPSTICKS));
+        let _ = spawn!(task_names[index] => philosopher(index, &CHOPSTICKS));
     }
 
     rprintln!("End of main task");

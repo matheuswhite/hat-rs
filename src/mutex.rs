@@ -96,6 +96,12 @@ pub struct MutexGuard<'a, T> {
     mutex: &'a Mutex<T>,
 }
 
+impl<'a, T> MutexGuard<'a, T> {
+    pub fn unlock(self) {
+        /* Unlocking MutexGuard by dropping */
+    }
+}
+
 impl<'a, T> Drop for MutexGuard<'a, T> {
     fn drop(&mut self) {
         self.mutex.unlock();
