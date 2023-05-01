@@ -13,18 +13,7 @@ use stm32f4xx_hal::gpio::{Output, Pin};
 
 use hat::prelude::*;
 
-#[global_allocator]
-pub static HEAP: Heap = Heap::empty();
-const HEAP_SIZE: usize = 1024;
-
-#[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
-    rprintln!("panic: {}", info);
-
-    loop {}
-}
-
-#[hat::main]
+#[hat::main(1024)]
 async fn main() {
     rtt_init_print!();
 
@@ -65,4 +54,11 @@ async fn blink2(mut led: Pin<'B', 7, Output>) {
         delay_ms(100).await;
         led.toggle();
     }
+}
+
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    rprintln!("panic: {}", info);
+
+    loop {}
 }

@@ -3,10 +3,17 @@
 use proc_macro::TokenStream;
 
 #[proc_macro_attribute]
-pub fn main(_args: TokenStream, item: TokenStream) -> TokenStream {
-    let _system_clock = "16_000_000";
+pub fn main(args: TokenStream, item: TokenStream) -> TokenStream {
+    let heap_size = args
+        .to_string()
+        .parse::<usize>()
+        .expect("Cannot get heap size");
 
-    format!(include_str!("../template/hat_main.rs"), item.to_string())
-        .parse::<TokenStream>()
-        .unwrap()
+    format!(
+        include_str!("../template/hat_main.rs"),
+        heap_size,
+        item.to_string()
+    )
+    .parse::<TokenStream>()
+    .unwrap()
 }

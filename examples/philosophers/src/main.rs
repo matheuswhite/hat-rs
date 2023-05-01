@@ -14,7 +14,7 @@ use stm32f4xx_hal as hal;
 use crate::philosophers::{philosopher, Chopstick};
 use hat::prelude::*;
 
-#[hat::main]
+#[hat::main(2048)]
 async fn main() {
     rtt_init_print!();
 
@@ -29,6 +29,7 @@ async fn main() {
 
     rprintln!("Main task init");
 
+    /* Must be static. If non-static, would be dropped at end of 'main' task */
     static CHOPSTICKS: [AsyncMutex<Chopstick>; 5] = [
         AsyncMutex::new(Chopstick {}),
         AsyncMutex::new(Chopstick {}),
@@ -50,10 +51,6 @@ async fn main() {
 
     rprintln!("End of main task");
 }
-
-#[global_allocator]
-pub static HEAP: Heap = Heap::empty();
-const HEAP_SIZE: usize = 2048;
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {

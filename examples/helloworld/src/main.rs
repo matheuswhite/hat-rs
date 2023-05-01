@@ -12,16 +12,12 @@ use rtt_target::{rprintln, rtt_init_print};
 #[allow(unused_imports)]
 use stm32f4xx_hal as hal;
 
-#[hat::main]
+#[hat::main(1024)]
 async fn main() {
     rtt_init_print!();
 
     rprintln!("Hello, World");
 }
-
-#[global_allocator]
-pub static HEAP: Heap = Heap::empty();
-const HEAP_SIZE: usize = 1024;
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
