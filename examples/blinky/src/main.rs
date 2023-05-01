@@ -50,12 +50,9 @@ async fn main() {
 }
 
 async fn blink(mut led: Pin<'B', 0, Output>) {
-    let mut count = 0;
-
     loop {
         delay_ms(500).await;
         led.toggle();
-        count += 1;
         delay_ms(500).await;
         led.toggle();
     }

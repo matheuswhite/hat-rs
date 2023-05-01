@@ -51,5 +51,15 @@ impl TimeManager {
         });
 
         wakers.iter().for_each(|(_, waker)| waker.wake_by_ref());
+
+        critical_section::with(|cs| {
+            let entries = unsafe { &mut *self.entries.borrow(cs).get() };
+
+            if !entries.is_empty() {
+                unsafe {
+                    __start_timer(entries[0].0);
+                }
+            }
+        });
     }
 }

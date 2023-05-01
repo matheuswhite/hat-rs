@@ -13,7 +13,7 @@ pub fn main(_args: TokenStream, item: TokenStream) -> TokenStream {
         static CALLBACK: fn(&'static TimeManager, u128) = TimeManager::timeout;
         static TIMER: Mutex<UnsafeCell<Option<SYST>>> = Mutex::new(UnsafeCell::new(None));
         static NOW: Mutex<UnsafeCell<u128>> = Mutex::new(UnsafeCell::new(0));
-        static NEXT_TIMEOUT: Mutex<UnsafeCell<u128>> = Mutex::new(UnsafeCell::new(0));
+        static NEXT_TIMEOUT: Mutex<UnsafeCell<u128>> = Mutex::new(UnsafeCell::new(u128::MAX));
 
         const TIME_CONTANT: u128 = 10_000_000;
         const TIME_DIVISOR: u128 = 10_000_000_000;
