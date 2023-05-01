@@ -47,6 +47,12 @@ pub struct MutexLocker<'a, T> {
     mutex: &'a Mutex<T>,
 }
 
+impl<'a, T> MutexLocker<'a, T> {
+    fn contains_waker(wakers: &VecDeque<Waker>, waker: &Waker) -> bool {
+        wakers.iter().any(|w| waker_id(w) == waker_id(waker))
+    }
+}
+
 impl<'a, T> Future for MutexLocker<'a, T> {
     type Output = MutexGuard<'a, T>;
 
@@ -57,23 +63,29 @@ impl<'a, T> Future for MutexLocker<'a, T> {
                 &mut *self.mutex.is_unlocked.borrow(cs).get()
             });
 
-            if !wakers.is_empty() {
-                let next_waker = wakers.pop_front().unwrap();
-
-                if waker_id(&next_waker) == waker_id(cx.waker()) {
+            if *is_unlocked {
+                if wakers.is_empty() {
+                    *is_unlocked = false;
                     Poll::Ready(MutexGuard { mutex: self.mutex })
                 } else {
-                    wakers.push_front(next_waker);
-                    if !wakers.iter().any(|w| waker_id(w) == waker_id(cx.waker())) {
-                        wakers.push_back(cx.waker().clone());
+                    let next_waker = wakers.pop_front().unwrap();
+
+                    if waker_id(&next_waker) == waker_id(cx.waker()) {
+                        Poll::Ready(MutexGuard { mutex: self.mutex })
+                    } else {
+                        wakers.push_front(next_waker);
+
+                        if !MutexLocker::<T>::contains_waker(wakers, cx.waker()) {
+                            wakers.push_back(cx.waker().clone());
+                        }
+                        Poll::Pending
                     }
-                    Poll::Pending
                 }
-            } else if *is_unlocked {
-                *is_unlocked = true;
-                Poll::Ready(MutexGuard { mutex: self.mutex })
             } else {
-                wakers.push_back(cx.waker().clone());
+                if !MutexLocker::<T>::contains_waker(wakers, cx.waker()) {
+                    wakers.push_back(cx.waker().clone());
+                }
+
                 Poll::Pending
             }
         })
