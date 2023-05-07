@@ -14,7 +14,7 @@ use stm32f4xx_hal::gpio::{Output, Pin};
 use hat::prelude::*;
 
 #[hat::main(heap = 1024)]
-async fn main() {
+async fn main_task() {
     rtt_init_print!();
 
     let dp = hal::pac::Peripherals::take().unwrap();

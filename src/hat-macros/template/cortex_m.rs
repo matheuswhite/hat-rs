@@ -65,7 +65,7 @@ fn __entry() -> ! {{
         unsafe {{ HEAP.init(HEAP_MEM.as_ptr() as usize, HEAP_SIZE) }}
     }}
 
-    let _ = spawn!(main);
+    let _ = spawn!({});
 
     let executor = critical_section::with(|cs| unsafe {{ &mut *EXECUTOR.borrow(cs).get() }});
     executor.block_on().unwrap();
