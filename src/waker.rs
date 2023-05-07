@@ -1,64 +1,35 @@
 use crate::executor::EXECUTOR;
 use alloc::boxed::Box;
-use core::slice::from_raw_parts;
-use core::str::from_utf8;
 use core::task::{RawWaker, RawWakerVTable, Waker};
 
-struct SizedString {
-    string: *const u8,
-    len: usize,
-}
-
-impl From<&'static str> for SizedString {
-    fn from(value: &'static str) -> Self {
-        Self {
-            string: value.as_ptr(),
-            len: value.len(),
-        }
-    }
-}
-
-pub fn waker_id(waker: &Waker) -> &'static str {
+pub fn waker_id(waker: &Waker) -> u64 {
     let p = waker.as_raw().data();
-    let data = p as *const SizedString as *mut SizedString;
-    let sized_string = unsafe { Box::from_raw(data) };
-    let sized_string = Box::leak(sized_string);
-    let name = unsafe { from_raw_parts(sized_string.string, sized_string.len) };
-
-    let Ok(name) = from_utf8(name) else {
-        panic!("name error");
-    };
-
-    name
+    let data = p as *const u64 as *mut u64;
+    let data = unsafe { Box::from_raw(data) };
+    *Box::leak(data)
 }
 
-pub fn new_waker(name: &'static str) -> Waker {
+pub fn new_waker(hash: u64) -> Waker {
     unsafe {
-        let sized_string: SizedString = name.into();
-        let sized_string = Box::new(sized_string);
-        let data = Box::into_raw(sized_string) as *const SizedString as *const ();
-        Waker::from_raw(RawWaker::new(data, &VTABLE))
+        let data = Box::new(hash);
+        Waker::from_raw(RawWaker::new(
+            Box::into_raw(data) as *const u64 as *const (),
+            &VTABLE,
+        ))
     }
 }
 
 pub fn delete_waker(waker: &Waker) {
     let p = waker.as_raw().data();
-    let data = p as *const SizedString as *mut SizedString;
-    let sized_string = unsafe { Box::from_raw(data) };
-    drop(sized_string);
+    let data = p as *const u64 as *mut u64;
+    let data = unsafe { Box::from_raw(data) };
+    drop(data);
 }
 
-fn get_name_from_waker(p: *const ()) -> &'static str {
-    let data = p as *const SizedString as *mut SizedString;
-    let sized_string = unsafe { Box::from_raw(data) };
-    let sized_string = Box::leak(sized_string);
-    let name = unsafe { from_raw_parts(sized_string.string, sized_string.len) };
-
-    let Ok(name) = from_utf8(name) else {
-        panic!("name error");
-    };
-
-    name
+fn get_waker_hash(p: *const ()) -> u64 {
+    let data = p as *const u64 as *mut u64;
+    let data = unsafe { Box::from_raw(data) };
+    *Box::leak(data)
 }
 
 static VTABLE: RawWakerVTable = {
@@ -69,7 +40,7 @@ static VTABLE: RawWakerVTable = {
         wake_by_ref(p)
     }
     unsafe fn wake_by_ref(p: *const ()) {
-        let name = get_name_from_waker(p);
+        let hash = get_waker_hash(p);
 
         critical_section::with(|cs| {
             let executor = unsafe { &mut *EXECUTOR.borrow(cs).get() };
@@ -77,7 +48,7 @@ static VTABLE: RawWakerVTable = {
             let Some(position) = executor
                 .unready_tasks()
                 .iter()
-                .position(|task| task.name() == name)
+                .position(|task| task.hash() == hash)
                 else {
                     panic!("position error");
                 };

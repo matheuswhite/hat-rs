@@ -30,8 +30,8 @@ impl Executor {
     }
 
     pub fn spawn(&mut self, task: Task) -> Result<(), Error> {
-        if self.ready_tasks.iter().any(|x| x.name() == task.name())
-            || self.unready_tasks.iter().any(|x| x.name() == task.name())
+        if self.ready_tasks.iter().any(|x| x == &task)
+            || self.unready_tasks.iter().any(|x| x == &task)
         {
             return Err(Error::TaskNameAlreadyExist);
         }
@@ -79,16 +79,29 @@ impl Executor {
 }
 
 #[macro_export]
+macro_rules! hash {
+    ($expr:expr) => {{
+        let mut hasher = FxHasher::default();
+        ($expr).hash(&mut hasher);
+        hasher.finish()
+    }};
+}
+
+#[macro_export]
 macro_rules! spawn {
     ($task:ident) => {
         critical_section::with(|cs| {
             let name = stringify!($task);
-            unsafe { &mut *EXECUTOR.borrow(cs).get() }.spawn(Task::new(name, $task()))
+            unsafe { &mut *EXECUTOR.borrow(cs).get() }.spawn(Task::new(name, hash!(name), $task()))
         })
     };
     ($task_name:expr => $task_fn:expr) => {
         critical_section::with(|cs| {
-            unsafe { &mut *EXECUTOR.borrow(cs).get() }.spawn(Task::new($task_name, $task_fn))
+            unsafe { &mut *EXECUTOR.borrow(cs).get() }.spawn(Task::new(
+                $task_name,
+                hash!($task_name),
+                $task_fn,
+            ))
         })
     };
 }
