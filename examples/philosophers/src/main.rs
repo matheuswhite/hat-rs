@@ -14,7 +14,7 @@ use stm32f4xx_hal as hal;
 use crate::philosophers::{philosopher, Chopstick};
 use hat::prelude::*;
 
-#[hat::main(2048)]
+#[hat::main(heap = 2048)]
 async fn main() {
     rtt_init_print!();
 

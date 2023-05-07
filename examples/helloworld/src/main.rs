@@ -12,7 +12,7 @@ use rtt_target::{rprintln, rtt_init_print};
 #[allow(unused_imports)]
 use stm32f4xx_hal as hal;
 
-#[hat::main(1024)]
+#[hat::main(heap = 1024)]
 async fn main() {
     rtt_init_print!();
 

@@ -13,7 +13,7 @@ use stm32f4xx_hal::gpio::{Output, Pin};
 
 use hat::prelude::*;
 
-#[hat::main(1024)]
+#[hat::main(heap = 1024)]
 async fn main() {
     rtt_init_print!();
 
