@@ -1,4 +1,5 @@
 use crate::time_manager::TimeManager;
+use crate::yield_future::yield_it;
 use core::cell::UnsafeCell;
 use core::future::Future;
 use core::pin::Pin;
@@ -16,6 +17,10 @@ struct Delay {
 }
 
 pub async fn delay_ms(milli: u64) {
+    if milli == 0 {
+        yield_it().await;
+    }
+
     Delay::new(Duration::from_millis(milli)).await
 }
 

@@ -4,6 +4,7 @@ pub use crate::mutex::Mutex as AsyncMutex;
 pub use crate::mutex::*;
 pub use crate::task::Task;
 pub use crate::time_manager::TimeManager;
+pub use crate::yield_future::yield_it;
 pub use crate::{hash, spawn};
 pub use core::cell::UnsafeCell;
 pub use core::hash::{Hash, Hasher};

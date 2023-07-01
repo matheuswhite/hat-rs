@@ -12,5 +12,6 @@ pub mod prelude;
 mod task;
 mod time_manager;
 mod waker;
+mod yield_future;
 
 pub use hat_macros::main;

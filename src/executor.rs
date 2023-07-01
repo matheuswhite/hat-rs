@@ -4,6 +4,7 @@ use alloc::vec::Vec;
 use core::cell::UnsafeCell;
 use core::task::Context;
 use critical_section::Mutex;
+use rtt_target::rprintln;
 
 unsafe impl Sync for Executor {}
 
@@ -13,6 +14,7 @@ pub struct Executor {
     ready_tasks: VecDeque<Task>,
     unready_tasks: Vec<Task>,
     is_blocked: bool,
+    current_task: Option<Task>,
 }
 
 #[derive(Debug)]
@@ -26,6 +28,7 @@ impl Executor {
             ready_tasks: VecDeque::new(),
             unready_tasks: Vec::new(),
             is_blocked: false,
+            current_task: None,
         }
     }
 
@@ -49,13 +52,21 @@ impl Executor {
         self.is_blocked = true;
 
         'main_loop: loop {
-            while let Some(mut task) = self.ready_tasks.pop_front() {
+            while !self.ready_tasks.is_empty() {
+                self.current_task = self.ready_tasks.pop_front();
+
+                let task = self.current_task.as_mut().unwrap();
+
                 let (mut future, waker) = task.future_waker();
 
                 let mut cx = Context::from_waker(waker);
 
                 if future.as_mut().poll(&mut cx).is_pending() {
-                    self.unready_tasks.push(task);
+                    if let Some(task) = self.current_task.take() {
+                        self.unready_tasks.push(task);
+                    }
+
+                    self.print_tasks();
                 }
             }
 
@@ -69,12 +80,39 @@ impl Executor {
         Ok(())
     }
 
+    fn print_tasks(&self) {
+        self.ready_tasks
+            .iter()
+            .for_each(|task| rprintln!("R Task [{:#x}]: {}", task.hash(), task.name()));
+        self.unready_tasks
+            .iter()
+            .for_each(|task| rprintln!("UR Task [{:#x}]: {}", task.hash(), task.name()));
+    }
+
     pub fn ready_tasks(&mut self) -> &mut VecDeque<Task> {
         &mut self.ready_tasks
     }
 
     pub fn unready_tasks(&mut self) -> &mut Vec<Task> {
         &mut self.unready_tasks
+    }
+
+    pub fn set_task_as_ready(&mut self, hash: u64) {
+        if let Some(task) = self.current_task.take() {
+            if task.hash() == hash {
+                self.ready_tasks.push_back(task);
+                return;
+            }
+
+            self.current_task = Some(task);
+        }
+
+        let Some(position) = self.unready_tasks.iter().position(|task| task.hash() == hash) else {
+            panic!("Task with hash {:#x} not exist!", hash);
+        };
+
+        let task = self.unready_tasks.remove(position);
+        self.ready_tasks.push_back(task);
     }
 }
 
