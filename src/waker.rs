@@ -45,16 +45,7 @@ static VTABLE: RawWakerVTable = {
         critical_section::with(|cs| {
             let executor = unsafe { &mut *EXECUTOR.borrow(cs).get() };
 
-            let Some(position) = executor
-                .unready_tasks()
-                .iter()
-                .position(|task| task.hash() == hash)
-                else {
-                    panic!("position error");
-                };
-
-            let task = executor.unready_tasks().remove(position);
-            executor.ready_tasks().push_back(task);
+            executor.set_task_as_ready(hash);
         });
     }
     unsafe fn drop(_: *const ()) {}

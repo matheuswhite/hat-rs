@@ -31,9 +31,11 @@ async fn main_task() {
     let gpiob = dp.GPIOB.split();
     let led1 = gpiob.pb0.into_push_pull_output_in_state(PinState::Low);
     let led2 = gpiob.pb7.into_push_pull_output_in_state(PinState::Low);
+    let led3 = gpiob.pb14.into_push_pull_output_in_state(PinState::Low);
 
     let _ = spawn!("blink" => blink(led1));
     let _ = spawn!("blink2" => blink2(led2));
+    let _ = spawn!("blink3" => blink_full(led3));
 
     rprintln!("End of main task");
 }
@@ -52,6 +54,15 @@ async fn blink2(mut led: Pin<'B', 7, Output>) {
         delay_ms(100).await;
         led.toggle();
         delay_ms(100).await;
+        led.toggle();
+    }
+}
+
+async fn blink_full(mut led: Pin<'B', 14, Output>) {
+    loop {
+        yield_it().await;
+        led.toggle();
+        delay_ms(0).await;
         led.toggle();
     }
 }
