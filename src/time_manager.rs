@@ -45,9 +45,10 @@ impl TimeManager {
         let wakers = critical_section::with(|cs| {
             let entries = unsafe { &mut *self.entries.borrow(cs).get() };
 
-            entries
-                .drain_filter(|(timeout, _)| *timeout == now)
-                .collect::<Vec<_>>()
+            let (drained, remaining): (Vec<_>, Vec<_>) =
+                entries.drain(..).partition(|(timeout, _)| *timeout == now);
+            *entries = remaining;
+            drained
         });
 
         wakers.iter().for_each(|(_, waker)| waker.wake_by_ref());

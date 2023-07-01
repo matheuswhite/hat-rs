@@ -4,7 +4,6 @@ use alloc::vec::Vec;
 use core::cell::UnsafeCell;
 use core::task::Context;
 use critical_section::Mutex;
-use rtt_target::rprintln;
 
 unsafe impl Sync for Executor {}
 
@@ -65,8 +64,6 @@ impl Executor {
                     if let Some(task) = self.current_task.take() {
                         self.unready_tasks.push(task);
                     }
-
-                    self.print_tasks();
                 }
             }
 
@@ -78,15 +75,6 @@ impl Executor {
         self.is_blocked = false;
 
         Ok(())
-    }
-
-    fn print_tasks(&self) {
-        self.ready_tasks
-            .iter()
-            .for_each(|task| rprintln!("R Task [{:#x}]: {}", task.hash(), task.name()));
-        self.unready_tasks
-            .iter()
-            .for_each(|task| rprintln!("UR Task [{:#x}]: {}", task.hash(), task.name()));
     }
 
     pub fn ready_tasks(&mut self) -> &mut VecDeque<Task> {

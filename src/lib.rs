@@ -1,4 +1,3 @@
-#![feature(drain_filter)]
 #![feature(waker_getters)]
 #![no_std]
 #![no_main]
