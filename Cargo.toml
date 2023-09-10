@@ -14,8 +14,9 @@ description = "A minimal async runtime for embedded systems"
 members = [
     "src/hat-macros",
     "examples/helloworld",
+    "examples/serial",
     "examples/blinky",
-    "examples/philosophers"
+    "examples/philosophers",
 ]
 
 [lib]
@@ -37,6 +38,10 @@ rand = { version = "0.8.5", default-features = false, features = ["small_rng"] }
 [[example]]
 name = "helloworld"
 path = "examples/helloworld/src/main.rs"
+
+[[example]]
+name = "serial"
+path = "examples/serial/src/main.rs"
 
 [[example]]
 name = "blinky"

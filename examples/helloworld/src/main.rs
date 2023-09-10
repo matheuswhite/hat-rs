@@ -16,7 +16,7 @@ use stm32f4xx_hal as hal;
 async fn main() {
     rtt_init_print!();
 
-    rprintln!("Hello, World");
+    rprintln!("Hello, World!");
 }
 
 #[panic_handler]

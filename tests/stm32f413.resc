@@ -1,0 +1,8 @@
+using sysbus
+
+mach create
+machine LoadPlatformDescription @stm32f413.repl
+
+showAnalyzer usart3
+
+sysbus LoadELF @serial

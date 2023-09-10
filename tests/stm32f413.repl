@@ -1,0 +1,10 @@
+using "platforms/cpus/stm32f4.repl"
+
+UserLED1: Miscellaneous.LED @ gpioPortB
+UserLED2: Miscellaneous.LED @ gpioPortB
+UserLED3: Miscellaneous.LED @ gpioPortB
+
+gpioPortB:
+    0  -> UserLED1@0
+    7  -> UserLED2@0
+    14 -> UserLED3@0

@@ -34,7 +34,7 @@ async fn main_task() {
     let led3 = gpiob.pb14.into_push_pull_output_in_state(PinState::Low);
 
     let _ = spawn!("blink" => blink(led1));
-    let _ = spawn!("blink2" => blink2(led2));
+    // let _ = spawn!("blink2" => blink2(led2));
     let _ = spawn!("blink3" => blink_full(led3));
 
     rprintln!("End of main task");
